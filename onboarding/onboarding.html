@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reply Copilot 设置引导</title>
+  <link rel="stylesheet" href="../sidepanel/sidepanel.css" />
+  <link rel="stylesheet" href="onboarding.css" />
+</head>
+<body class="ob">
+  <div class="ob-wrap">
+    <header class="ob-head">
+      <div class="brand">Reply Copilot <span class="ob-sub">设置引导 · 大约 3 分钟</span></div>
+      <ol class="ob-steps" id="obSteps">
+        <li data-s="0">模型</li><li data-s="1">账号</li><li data-s="2">画像</li><li data-s="3">回复风格</li><li data-s="4">开始用</li>
+      </ol>
+    </header>
+
+    <section class="ob-step card" data-step="0">
+      <h2>第 1 步：选一个模型，填上 API Key</h2>
+      <p class="hint">打分、起草、翻译都用同一个模型商。Key 只存在你这台电脑的浏览器里，不会上传到别处。插件永远不会替你点发送。</p>
+      <div class="chips" id="obProv"></div>
+      <label><span id="obKeyLabel">API Key</span><input id="obKey" type="password" autocomplete="off" /></label>
+      <div class="row"><button id="obTest" class="ghost">测试连接</button><span id="obTestMsg" class="hint"></span></div>
+      <label>你的母语（和你讨论、给你看中文意思时用）<select id="obMyLang"></select></label>
+    </section>
+
+    <section class="ob-step card" data-step="1">
+      <h2>第 2 步：告诉我你在各平台的账号（可选）</h2>
+      <p class="hint">用来认出「这是你自己写的」：你的帖子和回复不会被当成待回复内容，还会悄悄当成风格样本；别人回复你时会置顶提醒。不填也能用，打开对应网站时会尽量自动识别。</p>
+      <div class="grid2">
+        <label>Reddit 用户名<input id="obReddit" placeholder="不带 u/" /></label>
+        <label>X 账号<input id="obX" placeholder="不带 @" /></label>
+        <label>LinkedIn 名字<input id="obLinkedin" placeholder="和主页上显示的一致" /></label>
+        <label>Hacker News 用户名<input id="obHn" /></label>
+      </div>
+    </section>
+
+    <section class="ob-step card" data-step="2">
+      <h2>第 3 步：你的画像</h2>
+      <p class="hint">用几句话介绍你自己：做什么、关心哪些话题、有哪些观点。我帮你整理成兴趣、关键词和观点，用来找值得回的讨论，起草时也会站在你的立场。整理完你可以直接改。</p>
+      <textarea id="obIntro" rows="4" placeholder="比如：我在一家做端侧语音 AI 的公司做产品，关心个人助理、端侧芯片和隐私。我认为个人助理的胜负在于对用户的理解，而这依赖持续的端侧感知……"></textarea>
+      <div class="row"><button id="obIntroGo">帮我整理</button><span id="obIntroMsg" class="hint"></span></div>
+      <div id="obProfile">
+        <label>关注的领域<textarea id="obInterests" rows="6"></textarea></label>
+        <label>观点与立场<textarea id="obViews" rows="5"></textarea></label>
+        <label>预筛关键词<textarea id="obKeywords" rows="2"></textarea><small>逗号分隔</small></label>
+        <div class="grid2">
+          <label>关注的子版块<textarea id="obSubs" rows="2"></textarea><small>逗号分隔，不带 r/</small></label>
+          <label>Hacker News 关键词<textarea id="obHnKw" rows="2"></textarea><small>逗号分隔</small></label>
+        </div>
+      </div>
+    </section>
+
+    <section class="ob-step card" data-step="3">
+      <h2>第 4 步：你的回复风格</h2>
+      <p class="hint">贴几条你以前亲自写的回复或帖子（越像你平时说话越好），我总结成「风格档案」，起草时照着写。跳过也可以：你每发一条、每改一次草稿，它都会继续学。</p>
+      <textarea id="obSamples" rows="7" placeholder="每条之间空一行"></textarea>
+      <div class="row"><button id="obAddSamples" class="ghost">加入样本</button><span class="hint" id="obSampleMsg"></span></div>
+      <div class="row ob-import"><input id="obRedditImport" placeholder="Reddit 用户名" /><button id="obImport" class="ghost">从 Reddit 导入我的历史评论</button></div>
+      <div class="row"><button id="obBuild">生成风格档案</button><span class="hint" id="obBuildMsg"></span></div>
+      <pre id="obProfileOut" class="ob-pre hidden"></pre>
+    </section>
+
+    <section class="ob-step card" data-step="4">
+      <h2>好了，可以开始用了</h2>
+      <ul class="ob-tips">
+        <li><b>正常刷 Reddit / X / LinkedIn / Hacker News</b>：你看过的内容会自动打分，值得回的出现在侧边栏（点浏览器右上角的插件图标打开）。</li>
+        <li><b>工作台</b>：侧边栏右上角「工作台 ↗」，在标签页里集中处理所有平台、写帖子、看回复你的内容。</li>
+        <li><b>右键「帮我回复 / 翻译」</b>：在任何网页上选中文字就能用，聊天、邮件都行。</li>
+        <li><b>快捷键</b>：复制文字后按 Ctrl/⌘+Shift+9 帮我回复，Ctrl/⌘+Shift+8 翻译润色（想在 Chrome 不在前台时也能用，到 chrome://extensions/shortcuts 设成「全局」）。</li>
+        <li><b>所有回复都由你自己点发送</b>，插件只帮你起草和填入。</li>
+      </ul>
+      <div class="row"><button id="obOpenApp">打开工作台</button><button id="obOpenReddit" class="ghost">去 Reddit 逛逛</button></div>
+    </section>
+
+    <footer class="ob-foot">
+      <button id="obBack" class="ghost">上一步</button>
+      <span class="spacer"></span>
+      <button id="obSkip" class="ghost">跳过这一步</button>
+      <button id="obNext">下一步</button>
+    </footer>
+    <div id="notice" class="notice hidden"></div>
+  </div>
+  <script type="module" src="onboarding.js"></script>
+</body>
+</html>

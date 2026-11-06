@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>帮我回复</title>
+  <link rel="stylesheet" href="../sidepanel/sidepanel.css" />
+  <link rel="stylesheet" href="quick.css" />
+</head>
+<body class="quick">
+  <header class="q-bar">
+    <div class="q-modes" id="qModes"><button data-mode="reply" class="on">帮我回复</button><button data-mode="translate">翻译润色</button></div>
+    <span class="q-spacer"></span>
+    <div class="q-lang"><span id="qLangPre">用</span><select id="qLang"></select><span id="qLangPost">回复</span></div>
+  </header>
+  <main class="q-main">
+    <div class="q-ctx">
+      <div class="q-label"><span id="qCtxLabel">要回复的内容</span><button class="ghost small" id="qPaste" title="用剪贴板里的文字替换">粘贴剪贴板</button></div>
+      <textarea id="qText" rows="3" placeholder="在网页上选中文字后右键「帮我回复」；或者在任何聊天软件里复制对方的话，按快捷键打开这里（也可以直接粘贴到这里）"></textarea>
+      <div id="qSrc" class="q-src"></div>
+    </div>
+    <div id="qPolishRow" class="q-polish hidden"><label><input type="checkbox" id="qPolish" checked /> 按我的风格润色</label><span class="hint">不勾就是忠实翻译；目标语言和原文一样时只润色</span></div>
+    <div id="qSuggest" class="suggest hidden"></div>
+    <div id="qList"></div>
+    <div id="qBusy" class="spinner hidden">正在想怎么回…</div>
+    <div id="qErr" class="err hidden"></div>
+    <div id="qPanel" class="q-more hidden"><button class="ghost small" id="qToPanel">这是别人对我帖子的回复：挂到我的帖子下面</button></div>
+  </main>
+  <footer class="q-foot">
+    <textarea id="qView" rows="1" placeholder="写下你的观点，Enter 重新生成"></textarea>
+    <button id="qGo">生成</button>
+  </footer>
+  <script type="module" src="quick.js"></script>
+</body>
+</html>

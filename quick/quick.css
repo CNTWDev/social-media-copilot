@@ -1,0 +1,27 @@
+body.quick { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.q-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); flex: none; }
+.q-bar strong { font-size: 14px; }
+.q-spacer { flex: 1; }
+.q-lang { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.q-lang select { margin-top: 0 !important; width: auto; height: var(--h-sm); padding: 0 6px; font-size: 12px; }
+.q-main { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 10px 12px 12px; }
+.q-label { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.q-ctx textarea { font-size: 12px; max-height: 9em; }
+.q-src { font-size: 11px; color: var(--muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-src:empty { display: none; }
+#qList .draft { margin-top: 8px; }
+#qList .draft .actions button.done { background: var(--ok); border-color: var(--ok); }
+.q-more { margin-top: 10px; }
+.q-foot { flex: none; display: flex; gap: 8px; align-items: flex-end; padding: 8px 12px 10px; border-top: 1px solid var(--line); background: var(--bg); }
+.q-foot textarea { flex: 1; min-height: var(--h); max-height: 6em; resize: none; overflow-y: hidden; }
+.q-foot button { height: var(--h); flex: none; }
+.hidden { display: none !important; }
+#qList.dim { opacity: .5; }
+.q-foot textarea { height: var(--h); padding: 6px 10px; } .q-ctx textarea { margin-top: 0; }
+.q-modes { display: flex; gap: 2px; background: var(--soft); border-radius: 8px; padding: 2px; }
+.q-modes button { height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; }
+.q-modes button.on { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.q-polish { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 8px; font-size: 12px; }
+.q-polish label { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 500; }
+.q-polish input { width: auto; margin: 0; accent-color: var(--accent); }
+.q-polish .hint { margin: 0; font-size: 11px; }

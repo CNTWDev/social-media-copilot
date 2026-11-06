@@ -1,0 +1,19 @@
+body.ob { min-height: 100vh; }
+.ob-wrap { max-width: 720px; margin: 0 auto; padding: 28px 20px 40px; }
+.ob-head .brand { font-size: 18px; }
+.ob-sub { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+.ob-steps { list-style: none; display: flex; gap: 6px; padding: 0; margin: 16px 0 18px; counter-reset: s; }
+.ob-steps li { flex: 1; text-align: center; font-size: 12px; color: var(--muted); padding-top: 8px; border-top: 3px solid var(--line); }
+.ob-steps li.done { color: var(--text); border-color: var(--accent); }
+.ob-steps li.cur { color: var(--text); font-weight: 600; border-color: var(--accent); }
+.ob-step { display: none; }
+.ob-step.on { display: block; }
+.ob-step h2 { font-size: 16px; margin: 0 0 6px; }
+.ob-step .chips { margin: 12px 0 4px; }
+.ob-foot { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.ob-foot .spacer { flex: 1; }
+.ob-import input { flex: 1; }
+.ob-pre { white-space: pre-wrap; font: 12.5px/1.6 inherit; background: var(--soft); border-radius: 8px; padding: 10px 12px; margin-top: 10px; max-height: 320px; overflow: auto; }
+.ob-tips { padding-left: 18px; line-height: 1.8; }
+.ob-tips li { margin: 4px 0; }
+#obTestMsg.ok { color: var(--ok); }

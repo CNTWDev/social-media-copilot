@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reply Copilot</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="top-row">
+      <div class="brand">Reply Copilot <span class="app-only brand-sub">工作台</span></div>
+      <button id="openApp" class="ghost small panel-only" title="在浏览器标签页里打开完整的工作台">工作台 ↗</button>
+      <label class="pause" title="暂停打分、起草和订阅拉取"><input type="checkbox" id="paused" /><span>暂停</span></label>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="pipeline" id="pipeline" title="今天的处理进度，数字每天清零">
+      <div class="pl-steps">
+        <span class="pl-step"><b id="plSeen">0</b>看到</span><i>›</i>
+        <span class="pl-step"><b id="plQueued">0</b>送审</span><i>›</i>
+        <span class="pl-step"><b id="plScored">0</b>已打分</span><i>›</i>
+        <span class="pl-step hi"><b id="plHigh">0</b>高价值</span>
+      </div>
+      <div class="pl-bar"><div class="pl-fill" id="plFill"></div></div>
+      <div class="pl-status" id="plStatus"><span class="pl-dot"></span><span id="plText">空闲</span></div>
+    </div>
+  </header>
+  <div id="obBanner" class="ob-banner hidden"><span>还没配置模型 Key，插件暂时不能打分和起草。</span><button class="small" id="obBannerGo">开始设置（约 3 分钟）</button></div>
+  <div id="pageBar" class="pagebar panel-only"></div>
+  <nav class="tabs">
+    <button data-tab="queue" class="active">待回复 <span id="queueCount" class="pill"></span></button>
+    <div class="nav-sources app-only" id="navSources">
+      <button data-src="all" class="on">全部来源</button>
+      <button data-src="reddit">Reddit</button>
+      <button data-src="x">X</button>
+      <button data-src="linkedin">LinkedIn</button>
+      <button data-src="hn">Hacker News</button>
+      <button data-src="mine">回复我的</button>
+    </div>
+    <button data-tab="compose">发帖</button>
+    <button data-tab="write">翻译润色</button>
+    <button data-tab="library">关联库 <span id="libCount" class="pill"></span></button>
+    <button data-tab="style">风格 <span id="learnCount" class="pill"></span></button>
+    <button data-tab="settings">设置</button>
+  </nav>
+
+  <main>
+    <section id="tab-queue" class="tab active">
+      <div class="filterbar">
+        <button id="filterToggle" class="filter-toggle" aria-expanded="false">
+          <span class="ft-label">筛选</span>
+          <span id="filterSummary" class="ft-summary"></span>
+          <span class="caret">▾</span>
+        </button>
+        <button id="diagToggle" class="ghost status-btn" title="运行状态">状态</button>
+      </div>
+      <div id="filterPanel" class="card filter-panel hidden">
+        <div class="toolbar">
+          <select id="filterPlatform">
+            <option value="all">全部平台</option>
+            <option value="reddit">Reddit</option>
+            <option value="x">X</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="hn">Hacker News</option>
+          </select>
+          <select id="filterKind">
+            <option value="all">帖子 + 评论</option>
+            <option value="post">只看原帖</option>
+            <option value="comment">只看评论/回复</option>
+          </select>
+          <select id="filterStatus">
+            <option value="todo">待处理</option>
+            <option value="low">低分</option>
+            <option value="skipped">已跳过</option>
+            <option value="sent">已发送</option>
+          </select>
+          <select id="sortBy">
+            <option value="value">按价值排序</option>
+            <option value="new">按时间排序</option>
+            <option value="score">按相关度排序</option>
+          </select>
+        </div>
+        <div class="fp-label">价值档位</div>
+        <div class="chips" id="tierChips"></div>
+        <div class="fp-label">话题</div>
+        <div class="chips" id="catChips"></div>
+        <div class="fp-foot">
+          <button id="resetFilters" class="ghost small">重置</button>
+          <button id="closeFilters" class="small">收起</button>
+        </div>
+      </div>
+      <div id="diagBox" class="card diag hidden">
+        <div class="diag-head"><b>运行状态</b><span id="diagSummary" class="hint"></span></div>
+        <div id="diag"></div>
+        <div class="row"><button id="fetchFeed" class="ghost small" title="立即从 Reddit 子版块和 Hacker News 拉取新帖">立即拉取订阅源</button><button id="probeLinkedin" class="ghost small" title="LinkedIn 读不到内容时，复制一份页面结构诊断（不含帖子正文）发给开发者">复制 LinkedIn 诊断</button></div>
+      </div>
+      <div id="notice" class="notice hidden"></div>
+      <button id="newBar" class="newbar hidden"></button>
+      <div id="mineBar" class="minebar hidden"></div>
+      <div id="queue"></div>
+    </section>
+
+    <section id="tab-library" class="tab">
+      <form id="linkingForm" class="card">
+        <h3>关联引用</h3>
+        <p class="hint">自动收藏高价值帖子，回复相关话题时在一个草稿里带上它，把讨论串起来。</p>
+        <label class="check switch"><input type="checkbox" name="enabled" /><span>开启关联引用</span></label>
+        <label>自动收藏门槛<input name="autoSaveValue" type="number" min="0" max="100" /><small>价值分，85 = S 级</small></label>
+        <label class="check"><input type="checkbox" name="includeLink" /><span>带上原帖链接</span></label>
+        <label class="check"><input type="checkbox" name="includeQuote" /><span>引用原文<small>Reddit 引用一句原文；X 只贴链接，会自动显示成卡片</small></span></label>
+        <label class="check"><input type="checkbox" name="includeMention" /><span>点名原作者<small>X 用 @，Reddit 用 u/，只在同平台点名。频繁 @ 陌生人容易被判为垃圾账号，下面两项是保护。</small></span></label>
+        <div class="grid2">
+          <label>单条最多引用（次）<input name="maxUsesPerPost" type="number" min="1" /></label>
+          <label>同一作者点名间隔（天）<input name="mentionCooldownDays" type="number" min="1" /></label>
+        </div>
+        <div class="row"><button type="submit">保存</button></div>
+      </form>
+      <div id="libraryList"></div>
+    </section>
+
+    <section id="tab-style" class="tab">
+      <div class="card">
+        <h3>风格档案</h3>
+        <p class="hint">起草时会参考这份档案。可以直接修改，重新生成时会保留你手写的内容。</p>
+        <textarea id="profile" rows="12" placeholder="还没有风格档案。先在下面添加一些你写过的回复，再点「生成 / 更新」。"></textarea>
+        <div class="row">
+          <button id="saveProfile" class="ghost">保存修改</button>
+          <button id="buildProfile">生成 / 更新风格档案</button>
+        </div>
+        <p class="hint" id="profileMeta"></p>
+      </div>
+
+      <div class="card">
+        <h3>观点与立场</h3>
+        <p class="hint">你的背景、长期观点、不想碰的话题。起草时参考，不会硬塞进每条回复。</p>
+        <textarea id="viewpoints" rows="6" placeholder="例如：我在做端侧语音助手；我认为端侧 ASR 的关键是功耗而不是 WER；不评价具体公司的股价……"></textarea>
+        <div class="row"><button id="saveViewpoints" class="ghost">保存</button></div>
+        <div class="learn">
+          <div class="learn-head"><b>越用越懂你</b><span class="spacer"></span><label class="check inline-check"><input type="checkbox" id="learnOn" /><span>自动学习</span></label><button class="ghost small" id="learnNow">立即学习</button></div>
+          <p class="hint" title="来源：你写的讨论、补充要求、翻译原文、发出的帖子和回复，以及你贴进来的别人的帖子">从你主动输入的内容里学习。风格自动学；观点和兴趣先给你确认。</p>
+          <div id="learnList"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>LinkedIn 语气</h3>
+        <p class="hint">LinkedIn 上单独用这份语气说明，观点还是共用上面那份。</p>
+        <textarea id="toneLinkedin" rows="4"></textarea>
+        <div class="row"><button id="saveTone" class="ghost">保存</button></div>
+      </div>
+
+      <form id="companyForm" class="card">
+        <h3>公司背景</h3>
+        <p class="hint">以从业者视角参与讨论：背景用来塑造观点，只在直接相关时才提产品。</p>
+        <label class="check"><input type="checkbox" name="enabled" /><span>启用公司背景</span></label>
+        <div class="grid2">
+          <label>公司名<input name="name" /></label>
+          <label>你的职位<input name="role" placeholder="可选，如：产品负责人" /></label>
+        </div>
+        <label>产品名 / 别名<input name="aliases" /><small>逗号分隔，用来识别回复里是否提到公司</small></label>
+        <label>公司与产品亮点<textarea name="background" rows="9"></textarea><small>只写公开、可核实的事实</small></label>
+        <label class="check"><input type="checkbox" name="disclose" /><span>提到公司时自动加利益相关声明<small>平台规则要求员工推荐自家产品时表明身份，不声明是常见的封号原因。强烈建议开启。</small></span></label>
+        <label>提及频率<input name="mentionEvery" type="number" min="1" /><small>同一平台每 N 条回复最多提 1 次公司</small></label>
+        <div class="row"><button type="submit">保存公司背景</button></div>
+      </form>
+
+      <div class="card">
+        <h3>让它学习你的风格</h3>
+        <ol class="hint steps">
+          <li><b>导入 Reddit 历史评论</b>（最多约 300 条公开评论）：
+            <div class="row"><input id="redditUser" placeholder="Reddit 用户名" /><button id="importReddit">导入</button></div>
+          </li>
+          <li><b>采集 X 上的历史回复</b>：先在设置里填好你的 X 账号，然后打开你的「回复」页往下滑，看到的你自己的回复都会被记下。
+            <div class="row"><button id="openXReplies" class="ghost">打开我的 X 回复页</button></div>
+          </li>
+          <li><b>粘贴样本</b>：每条之间用一行 <code>---</code> 分隔。
+            <textarea id="manualSamples" rows="5"></textarea>
+            <div class="row"><button id="addSamples" class="ghost">添加样本</button></div>
+          </li>
+          <li><b>自动学习</b>：每次你发出回复，扩展都会记下定稿；如果你改过草稿，会把「草稿 → 定稿」的差异也记下来。每累计 8 条自动更新一次档案。</li>
+        </ol>
+        <p class="hint" id="sampleMeta"></p>
+        <details>
+          <summary>查看最近的样本</summary>
+          <div id="sampleList"></div>
+        </details>
+      </div>
+    </section>
+
+    <section id="tab-compose" class="tab">
+      <div class="cp-bar">
+        <span class="cp-cur" id="cpCur">新议题</span>
+        <button class="ghost small" id="cpNew">＋ 新议题</button>
+        <button class="ghost small" id="cpHistBtn">历史 <span class="pill" id="cpHistCount"></span></button>
+      </div>
+      <div id="cpHist" class="card hidden">
+        <input id="cpSearch" placeholder="搜索议题、讨论内容…" />
+        <div id="cpList"></div>
+      </div>
+      <div id="cpMine"></div>
+      <div class="card">
+        <div class="chips" id="cpMode">
+          <button class="chip" data-mode="post">发表我的观点</button>
+          <button class="chip" data-mode="reply">回复别人的帖子</button>
+        </div>
+        <div id="cpSrc" class="hidden">
+          <div class="fp-label">对方的帖子</div>
+          <textarea id="cpSrcText" rows="4" placeholder="把对方的帖子或观点粘贴进来"></textarea>
+          <div class="row"><input id="cpSrcAuthor" placeholder="作者（可选）" /><input id="cpSrcUrl" placeholder="帖子链接（可选，用来自动填入回复框）" /></div>
+        </div>
+        <div id="cpQuick" class="cp-quick hidden"><span class="hint">想先聊聊你的看法再组织回复？</span><button class="ghost small" id="cpDiscOpen">展开讨论</button></div>
+        <div id="cpDiscWrap">
+        <h3 id="cpDiscTitle">讨论观点</h3>
+        <p class="hint" id="cpDiscHint">用中文或英文说说你的想法，我会帮你提炼观点、补论据、找反方视角并追问。想清楚了就在下面生成帖子。</p>
+        <div id="cpThread"></div>
+        <textarea id="cpInput" rows="4" placeholder="比如：我觉得 AI 原生公司的核心竞争力不是模型，而是…（Ctrl/⌘ + Enter 发送）"></textarea>
+        <div class="row"><button id="cpSend">讨论</button></div>
+        </div>
+      </div>
+      <div class="card" id="cpPostCard">
+        <h3>写成帖子</h3>
+        <p class="hint">按讨论的结论，用你的口吻给每个平台各写一版。只会打开发帖页并填好内容，发布按钮由你自己点。</p>
+        <div class="chips" id="cpPlats"></div>
+        <div class="row"><label class="inline">语言<select id="cpLang"></select></label><button id="cpGen">生成帖子</button></div>
+      </div>
+      <div id="cpOut"></div>
+      <div class="card hidden noai" id="cpNoAI">这条来自不允许 AI 代写评论的平台（比如 Hacker News）。我们在这里把观点讨论清楚，回复请你打开原帖用自己的话写。</div>
+      <div class="card hidden" id="cpReplyCard">
+        <h3>组织成回复</h3>
+        <p class="hint">把你在讨论里的观点和输入，结合对方的帖子，整理成 3 条回复建议，附母语意思。可以补充角度再重写，发送由你自己点。</p>
+        <div class="row"><label class="inline">回复语言<select id="cpReplyLang"></select></label><button id="cpReplyGo">组织回复</button></div>
+      </div>
+      <div id="cpReplyBox"></div>
+    </section>
+
+    <section id="tab-write" class="tab">
+      <div class="card">
+        <h3>翻译润色</h3>
+        <p class="hint">任何要发的内容都可以在这里翻译或润色，会贴着你的回复风格写；你改过的译文会被记下来，越用越像你。也可以在任何地方复制文字后按 Ctrl/⌘+Shift+8 打开小窗。</p>
+        <div class="chips" id="wrMode"><button class="chip on" data-wrmode="polish">翻译 + 按我的风格润色</button><button class="chip" data-wrmode="plain">只忠实翻译</button></div>
+        <textarea id="wrSrc" rows="5" placeholder="用你习惯的语言写…（Ctrl/⌘ + Enter 翻译）"></textarea>
+        <div class="fp-label">翻译成（可多选；选和原文一样的语种就是只润色）</div>
+        <div class="chips" id="wrLangs"></div>
+        <div class="row"><button id="wrGo">生成</button><span class="hint" id="wrMeta"></span></div>
+      </div>
+      <div id="wrResults"></div>
+      <div id="wrRefine" class="card hidden">
+        <div class="refine">
+          <input id="wrInstr" placeholder="对所有译文的补充要求：更口语 / 更短 / 保留这个词不翻…" />
+          <button class="small" id="wrRedo">重译</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab">
+      <div class="card ob-again"><span>第一次用，或想重新配置 Key、画像、风格？</span><button class="ghost small" id="openOnboarding" type="button">打开设置引导</button></div>
+      <form id="settingsForm" class="card">
+        <h3>AI 模型</h3>
+        <div class="grid2">
+          <label>模型商<select name="provider">
+            <option value="anthropic">Claude（Anthropic）</option>
+            <option value="openai">OpenAI</option>
+            <option value="deepseek">DeepSeek</option>
+          </select></label>
+          <label><span id="keyLabel">API Key</span><input name="providerKey" type="password" autocomplete="off" /></label>
+        </div>
+        <p class="hint" id="providerHint"></p>
+        <details class="adv">
+          <summary>自定义模型名（一般不用改）</summary>
+          <div class="grid2">
+            <label>打分模型<input name="scoreModel" /></label>
+            <label>起草模型<input name="draftModel" /></label>
+          </div>
+          <small>留空就用默认模型。打分量大，用便宜快速的模型；起草用更强的模型。</small>
+        </details>
+
+        <h3>兴趣</h3>
+        <label>兴趣领域描述<textarea name="interests" rows="6"></textarea><small>给模型打分用</small></label>
+        <label>关键词<textarea name="keywords" rows="4"></textarea><small>逗号分隔；标题命中记 2 分，正文命中记 1 分</small></label>
+        <label class="check"><input type="checkbox" name="keywordPrefilter" /><span>启用本地预筛<small>在本地先过滤，不花 Token，强烈建议开启</small></span></label>
+        <label>排除词<textarea name="negativeKeywords" rows="2"></textarea><small>命中任一个直接丢弃</small></label>
+        <div class="grid3">
+          <label>预筛分数线<input name="minLocalScore" type="number" min="0" /></label>
+          <label>时效（小时）<input name="maxAgeHours" type="number" min="1" /></label>
+          <label>每日打分上限<input name="maxScoredPerDay" type="number" min="0" /></label>
+        </div>
+        <label>关注的子版块<textarea name="subreddits" rows="2"></textarea><small>逗号分隔，不带 r/；这些版块的内容预筛加 1 分，也是订阅源的来源</small></label>
+        <div class="grid3">
+          <label>显示阈值<input name="scoreThreshold" type="number" min="0" max="100" /></label>
+        </div>
+        <p class="hint hint-after">显示阈值按相关度。插件只打分、筛选，不会自动起草；需要时在卡片上点「起草回复」。</p>
+
+        <h3>自动浏览（Reddit 订阅源）</h3>
+        <label class="check"><input type="checkbox" name="feedEnabled" /><span>定时拉取关注子版块的新帖<small>只读公开数据，频率很低</small></span></label>
+        <div class="grid3"><label>间隔（分钟，≥15）<input name="feedIntervalMin" type="number" min="15" /></label></div>
+
+        <h3>Hacker News</h3>
+        <label class="check"><input type="checkbox" name="hnEnabled" /><span>按关键词拉取 HN 新帖和首页<small>和 Reddit 订阅源同一个间隔；HN 不允许 AI 代写评论，所以这里的内容只做中文解读和讨论</small></span></label>
+        <label>HN 关键词<textarea name="hnKeywords" rows="2"></textarea><small>逗号分隔，每次轮流搜 3 个</small></label>
+
+        <h3>安全阀</h3>
+        <p class="hint">每条回复之间按最短和最长间隔随机冷却，各平台分开计算。LinkedIn 风控最严，单独用更长的间隔。</p>
+        <div class="grid3">
+          <label>Reddit 每日上限<input name="capReddit" type="number" min="0" /></label>
+          <label>X 每日上限<input name="capX" type="number" min="0" /></label>
+          <label>LinkedIn 每日上限<input name="capLinkedin" type="number" min="0" /></label>
+        </div>
+        <div class="grid2">
+          <label>最短间隔（分钟）<input name="cooldownMinMin" type="number" min="0" step="0.5" /></label>
+          <label>最长间隔（分钟）<input name="cooldownMaxMin" type="number" min="0" step="0.5" /></label>
+          <label>LinkedIn 最短间隔<input name="linkedinCooldownMinMin" type="number" min="0" step="0.5" /></label>
+          <label>LinkedIn 最长间隔<input name="linkedinCooldownMaxMin" type="number" min="0" step="0.5" /></label>
+        </div>
+
+        <h3>重点关注名单</h3>
+        <p class="hint">每行一个人：名字、@账号、u/用户名或主页链接都可以。他们的新内容跳过关键词筛选，排在最前面。</p>
+        <textarea name="watchlist" rows="4" placeholder="例如：&#10;https://www.linkedin.com/in/someone/&#10;@karpathy&#10;Jane Doe"></textarea>
+        <label class="check"><input type="checkbox" name="watchNotify" /><span>他们发新帖时弹出系统通知</span></label>
+
+        <h3>语言</h3>
+        <p class="hint">讨论、建议和对照都用你的母语；最终发出去的内容用目标语言（发帖默认英文，回复默认跟对方一致，每条都可以单独改）。</p>
+        <label>我的母语<select name="myLang"></select></label>
+
+        <h3>你的账号</h3>
+        <p class="hint">用于识别你自己写的内容，不会用来登录。</p>
+        <div class="grid2">
+          <label>Reddit 用户名<input name="redditUsername" placeholder="不带 u/" /></label>
+          <label>X 账号<input name="xHandle" placeholder="不带 @" /></label>
+          <label>LinkedIn 名字<input name="linkedinName" placeholder="和主页上显示的一致" /></label>
+          <label>HN 用户名<input name="hnUser" /></label>
+        </div>
+        <h3>数据保留（天）</h3>
+        <div class="grid3">
+          <label>待处理 / 跳过<input name="pendingDays" type="number" min="1" /></label>
+          <label>已发送<input name="sentDays" type="number" min="1" /></label>
+          <label>关联库<input name="libraryDays" type="number" min="1" /></label>
+        </div>
+        <p class="hint hint-after">关联库从最后一次引用起算。风格样本和修改记录不按时间过期，只保留最近 400 条样本和 100 条修改。</p>
+        <div class="row"><button type="submit">保存设置</button><span id="savedHint" class="hint"></span></div>
+      </form>
+      <div class="card">
+        <h3>数据</h3>
+        <p class="hint" id="storageUsage"></p>
+        <div class="btn-grid">
+          <button id="exportData" class="ghost">导出数据</button>
+          <button id="cleanupNow" class="ghost">清理过期数据</button>
+          <button id="clearQueue" class="ghost danger">清空待回复</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="sidepanel.js" type="module"></script>
+  <div id="detail" class="detail hidden">
+    <div class="detail-bar">
+      <button id="detailBack" class="ghost small">← 返回列表</button>
+      <span id="detailPos" class="muted"></span>
+      <span class="spacer"></span>
+      <button id="detailPrev" class="ghost small" title="上一条">↑</button>
+      <button id="detailNext" class="ghost small">下一条 ↓</button>
+    </div>
+    <div id="detailBody" class="detail-body"></div>
+  </div>
+</body>
+</html>
