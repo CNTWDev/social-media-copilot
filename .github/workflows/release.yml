@@ -1,0 +1,48 @@
+# 推一个版本 tag（如 v0.16.1）时自动打包扩展，并发布到 GitHub Releases。
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check manifest version matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VER=$(jq -r .version manifest.json)
+          if [ "$TAG" != "$VER" ]; then
+            echo "Tag v$TAG does not match manifest.json version $VER"; exit 1
+          fi
+
+      - name: Build zip
+        run: |
+          mkdir -p dist/reply-copilot
+          tar --exclude=./.git --exclude=./.github --exclude=./dist --exclude=./.gitignore -cf - . | tar -xf - -C dist/reply-copilot
+          cd dist && zip -qr "reply-copilot-${GITHUB_REF_NAME}.zip" reply-copilot
+
+      - name: Release notes from README
+        run: |
+          awk -v v="## ${GITHUB_REF_NAME} 更新" 'index($0, v) == 1 { on = 1; next } on && /^## / { exit } on' README.md > notes.md
+          cat >> notes.md <<'TXT'
+
+          ### 安装
+          1. 下载下面的 `reply-copilot-*.zip`，解压。
+          2. Chrome 打开 `chrome://extensions`，右上角打开「开发者模式」。
+          3. 点「加载已解压的扩展程序」，选解压出来的 `reply-copilot` 文件夹。
+          4. 升级：解压新版本覆盖到同一个文件夹，在扩展页点刷新按钮。数据保存在浏览器里，不会丢。
+          TXT
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/reply-copilot-${GITHUB_REF_NAME}.zip" \
+            --title "Reply Copilot ${GITHUB_REF_NAME}" --notes-file notes.md

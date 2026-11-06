@@ -2,6 +2,17 @@
 
 自动发现你感兴趣的帖子和评论，用你的风格起草回复，**由你确认后亲自发送**。
 
+## 安装
+
+1. 到 [Releases](https://github.com/CNTWDev/social-media-copilot/releases/latest) 下载最新的 `reply-copilot-vX.Y.Z.zip`，解压。
+2. Chrome 打开 `chrome://extensions`，右上角打开「开发者模式」。
+3. 点「加载已解压的扩展程序」，选解压出来的 `reply-copilot` 文件夹。第一次装会自动打开设置引导。
+4. 升级：把新版本解压覆盖到同一个文件夹，在扩展页点刷新按钮。数据存在浏览器里，不会丢；也可以先在「设置 → 配置备份 / 迁移」导出一份备份。
+
+也可以直接克隆仓库，用仓库根目录作为「已解压的扩展程序」加载。
+
+**发布新版本（维护者）**：改 `manifest.json` 的 version，在 README 加一节 `## vX.Y.Z 更新：…`，然后推 tag：`git tag vX.Y.Z && git push origin vX.Y.Z`。GitHub Actions 会自动打包 zip 并发布到 Releases，发布说明取自 README 里对应的那一节。
+
 ## 它做什么
 
 | 环节 | 做法 | 为什么安全 |
