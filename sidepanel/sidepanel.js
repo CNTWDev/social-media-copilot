@@ -1,6 +1,7 @@
 import { getSettings, saveSettings, getStyle, saveStyle, getStats, getPosts, getDiag, getCompany, saveCompany, mentionInfo,
   getLinking, saveLinking, getLibrary } from '../lib/store.js';
-import { valueOf, tierOf, CATEGORIES } from '../lib/value.js';
+import { valueOf, tierOf, categoriesOf } from '../lib/value.js';
+import { exportConfig, importConfig, parseConfig, downloadJson, configFileName } from '../lib/config.js';
 import { PROVIDERS, providerOf, hasKey } from '../lib/llm.js';
 import { PLATFORMS, PLATFORM_KEYS, REPLY_KEYS, platName, who, noAI } from '../lib/platforms.js';
 // 同一个页面两种用法：整页工作台（?app=1，在标签页里打开）和浏览时的侧边栏（只看当前页面）
@@ -29,7 +30,8 @@ let tierFilter = 'all';
 // 待回复卡片的操作同时用在「待回复」列表和「回复别人的帖子」议题里
 const qOn = (ev, fn) => ['#queue', '#cpReplyBox', '#detailBody'].forEach((sel) => document.querySelector(sel).addEventListener(ev, fn));
 let myLang = 'zh';
-getSettings().then((s) => { myLang = s.myLang || 'zh'; });
+let cats = categoriesOf('');
+getSettings().then((s) => { myLang = s.myLang || 'zh'; cats = categoriesOf(s.interests); });
 let topicFilter = ''; // 从「发帖」议题跳过来时，只看这个议题下帖子的回复
 const isMine = (p) => !!(p.replyToMe || p.onMyPost);
 let catFilter = 'all';
@@ -509,7 +511,7 @@ function renderChips(base) {
   const cc = {};
   base.forEach((p) => p.category && (cc[p.category] = (cc[p.category] || 0) + 1));
   // 分类按钮固定全部显示（没有内容的变灰），这样新内容进来时高度不会变化。
-  $('#catChips').innerHTML = [['all', '全部话题', 1]].concat(CATEGORIES.map((c) => [c, `${c} ${cc[c] || 0}`, cc[c]]))
+  $('#catChips').innerHTML = [['all', '全部话题', 1]].concat([...cats, ...Object.keys(cc).filter((c) => !cats.includes(c))].map((c) => [c, `${c} ${cc[c] || 0}`, cc[c]]))
     .map(([k, l, n]) => `<button class="chip ${catFilter === k ? 'on' : ''} ${n ? '' : 'zero'}" data-cat="${esc(k)}">${esc(l)}</button>`).join('');
 }
 $('#tierChips').addEventListener('click', (e) => { const t = e.target.dataset.tier; if (t) { tierFilter = t; topicFilter = ''; renderQueue(true); } });
@@ -1190,7 +1192,7 @@ function renderCpMode() {
   $('#cpDiscHint').textContent = reply
     ? '用你习惯的语言说说你怎么看这条帖子：认同什么、反对什么、想补充什么。我会帮你分析对方的观点、找到值得回应的角度。'
     : '用中文或英文说说你的想法，我会帮你提炼观点、补论据、找反方视角并追问。想清楚了就在下面生成帖子。';
-  $('#cpInput').placeholder = reply ? '比如：他说端侧模型没前途，我不同意，因为…（Ctrl/⌘ + Enter 发送）' : '比如：我觉得 AI 原生公司的核心竞争力不是模型，而是…（Ctrl/⌘ + Enter 发送）';
+  $('#cpInput').placeholder = reply ? '比如：他说的这一点我不同意，因为…（Ctrl/⌘ + Enter 发送）' : '比如：我觉得这件事真正的难点不是技术，而是…（Ctrl/⌘ + Enter 发送）';
   const src = cp.source || {};
   if (document.activeElement !== $('#cpSrcText')) $('#cpSrcText').value = src.text || '';
   if (document.activeElement !== $('#cpSrcAuthor')) $('#cpSrcAuthor').value = src.author || '';
@@ -1838,10 +1840,31 @@ form.addEventListener('submit', async (e) => {
 $('#exportData').addEventListener('click', async () => {
   const all = await chrome.storage.local.get(null);
   if (all.settings) all.settings = { ...all.settings, apiKey: '(已隐藏)', openaiKey: '(已隐藏)', deepseekKey: '(已隐藏)' };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: 'reply-copilot-export.json' });
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadJson(all, 'reply-copilot-export.json');
+});
+// ---- 配置导出 / 导入 ----
+$('#cfgExport').addEventListener('click', async () => {
+  const withKeys = $('#cfgKeys').checked;
+  if (withKeys && !confirm('导出文件里会带上明文 API Key。只存在你自己的电脑上，不要发给别人或传到网上。继续？')) return;
+  const cfg = await exportConfig({ includeKeys: withKeys });
+  downloadJson(cfg, configFileName());
+  notice(`已导出配置：${cfg.style.samples.length} 条风格样本${cfg.includesKeys ? '，含 API Key' : '，不含 API Key'}。`);
+});
+$('#cfgImport').addEventListener('click', () => $('#cfgFile').click());
+$('#cfgFile').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try {
+    const cfg = parseConfig(await f.text());
+    const mode = document.querySelector('input[name=cfgMode]:checked')?.value || 'merge';
+    if (mode === 'overwrite' && !confirm('覆盖模式会用文件里的内容替换你现在的兴趣、观点、风格样本和公司背景。继续？')) return;
+    const changed = await importConfig(cfg, mode);
+    notice(changed.length ? '已导入：' + changed.join('；') : '文件里的内容你这边都已经有了，没有变化。', 8000);
+    renderSettings(); renderStyle(); renderCompany(); renderLearn();
+  } catch (err) {
+    notice('导入失败：' + (err.message || err), 8000);
+  }
 });
 $('#cleanupNow').addEventListener('click', async () => {
   await send({ type: 'CLEANUP' });
@@ -1858,7 +1881,7 @@ $('#clearQueue').addEventListener('click', async () => {
 // ---------------- Live updates ----------------
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.posts || changes.stats || changes.settings) scheduleRender();
-  if (changes.settings) { renderWrite(); myLang = changes.settings.newValue?.myLang || 'zh'; }
+  if (changes.settings) { renderWrite(); myLang = changes.settings.newValue?.myLang || 'zh'; cats = categoriesOf(changes.settings.newValue?.interests); }
   if (changes.ownPosts && !$('#cpHist').classList.contains('hidden')) renderCpList();
   if ((changes.ownPosts || changes.posts) && !$('#cpMine').contains(document.activeElement)) renderCpMine();
   if (changes.posts) renderCpReply();

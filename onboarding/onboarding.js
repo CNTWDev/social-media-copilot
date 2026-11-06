@@ -1,6 +1,7 @@
 // 首次安装的设置引导：模型 → 账号 → 画像 → 回复风格 → 开始用
 import { getSettings, saveSettings, getStyle, saveStyle } from '../lib/store.js';
 import { PROVIDERS } from '../lib/llm.js';
+import { importConfig, parseConfig } from '../lib/config.js';
 
 const $ = (s) => document.querySelector(s);
 const send = (msg) => chrome.runtime.sendMessage(msg).catch((e) => ({ ok: false, error: String(e.message || e) }));
@@ -202,6 +203,24 @@ $('#obBuild').addEventListener('click', async () => {
   $('#obBuildMsg').textContent = '✓ 风格档案生成好了，以后还会越用越准。';
   $('#obProfileOut').textContent = st.profile || '';
   $('#obProfileOut').classList.toggle('hidden', !st.profile);
+});
+
+// ---- 导入已有的配置文件 ----
+$('#obImportCfg').addEventListener('click', () => $('#obCfgFile').click());
+$('#obCfgFile').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try {
+    const changed = await importConfig(parseConfig(await f.text()), 'merge');
+    await init();
+    const s = await getSettings();
+    const keyOk = !!s[PROVIDERS[s.provider]?.keyField];
+    notice((changed.length ? '已导入：' + changed.join('；') + '。' : '没有需要补的内容。') + (keyOk ? '点「下一步」逐项确认就行。' : '文件里没有 API Key，填上 Key 再继续。'), 10000);
+    if (keyOk) go(2);
+  } catch (err) {
+    notice('导入失败：' + (err.message || err), 8000);
+  }
 });
 
 init();

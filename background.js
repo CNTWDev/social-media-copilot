@@ -1,10 +1,10 @@
 import { getSettings, saveSettings, getStyle, saveStyle, getStats, saveStats, getPosts, updatePosts, updateDiag, getDiag, migrate, getCompany, mentionInfo,
   getLinking, getLibrary, updateLibrary, libraryEntry, getMentionLog } from './lib/store.js';
-import { valueOf } from './lib/value.js';
+import { valueOf, categoriesOf } from './lib/value.js';
 import { localScore } from './lib/prefilter.js';
 import { callLLM, hasKey } from './lib/llm.js';
 import { PLATFORMS, PLATFORM_KEYS, platName, platformOfId, isSelf, isWatched, noAI } from './lib/platforms.js';
-import { SCORE_SCHEMA, DRAFT_SCHEMA, scorePrompt, draftPrompt, profilePrompt, LONGPOST_SCHEMA, longPostPrompt, translatePrompt,
+import { scoreSchema, DRAFT_SCHEMA, scorePrompt, draftPrompt, profilePrompt, LONGPOST_SCHEMA, longPostPrompt, translatePrompt,
   LANGS, quickPrompt, DIGEST_SCHEMA, digestPrompt, INTRO_SCHEMA, introPrompt, discussPrompt, composePrompt, composeSchema, VIEWS_SCHEMA, viewsPrompt } from './lib/prompts.js';
 import { detectLang, normLang, randBetween, sleep } from './lib/util.js';
 
@@ -278,7 +278,7 @@ async function runScoring() {
       const { system, user } = scorePrompt(s, batch, await getStyle(), await getCompany());
       let results = [];
       try {
-        ({ results = [] } = await busy('scoring', batch.length, () => callLLM(s, 'score', { system, user, schema: SCORE_SCHEMA, effort: 'low', maxTokens: 4000, onUsage: trackUsage('score') })));
+        ({ results = [] } = await busy('scoring', batch.length, () => callLLM(s, 'score', { system, user, schema: scoreSchema(categoriesOf(s.interests)), effort: 'low', maxTokens: 4000, onUsage: trackUsage('score') })));
       } catch (err) {
         await updatePosts((ps) => batch.forEach((b) => ps[b.id] && (ps[b.id].error = String(err.message || err))));
         await updateDiag((d) => (d.lastError = '打分失败：' + String(err.message || err)));

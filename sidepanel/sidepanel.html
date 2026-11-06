@@ -133,7 +133,7 @@
       <div class="card">
         <h3>观点与立场</h3>
         <p class="hint">你的背景、长期观点、不想碰的话题。起草时参考，不会硬塞进每条回复。</p>
-        <textarea id="viewpoints" rows="6" placeholder="例如：我在做端侧语音助手；我认为端侧 ASR 的关键是功耗而不是 WER；不评价具体公司的股价……"></textarea>
+        <textarea id="viewpoints" rows="6" placeholder="例如：我在做 xx 产品；我认为这个领域的关键是 A 而不是 B；不评价具体公司的股价……"></textarea>
         <div class="row"><button id="saveViewpoints" class="ghost">保存</button></div>
         <div class="learn">
           <div class="learn-head"><b>越用越懂你</b><span class="spacer"></span><label class="check inline-check"><input type="checkbox" id="learnOn" /><span>自动学习</span></label><button class="ghost small" id="learnNow">立即学习</button></div>
@@ -213,7 +213,7 @@
         <h3 id="cpDiscTitle">讨论观点</h3>
         <p class="hint" id="cpDiscHint">用中文或英文说说你的想法，我会帮你提炼观点、补论据、找反方视角并追问。想清楚了就在下面生成帖子。</p>
         <div id="cpThread"></div>
-        <textarea id="cpInput" rows="4" placeholder="比如：我觉得 AI 原生公司的核心竞争力不是模型，而是…（Ctrl/⌘ + Enter 发送）"></textarea>
+        <textarea id="cpInput" rows="4" placeholder="比如：我觉得这件事真正的难点不是技术，而是…（Ctrl/⌘ + Enter 发送）"></textarea>
         <div class="row"><button id="cpSend">讨论</button></div>
         </div>
       </div>
@@ -338,11 +338,25 @@
         <p class="hint hint-after">关联库从最后一次引用起算。风格样本和修改记录不按时间过期，只保留最近 400 条样本和 100 条修改。</p>
         <div class="row"><button type="submit">保存设置</button><span id="savedHint" class="hint"></span></div>
       </form>
+      <div class="card" id="cfgCard">
+        <h3>配置备份 / 迁移</h3>
+        <p class="hint">把兴趣、观点、风格样本、公司背景、账号等打包成一个文件，换电脑或重装时一键导入。待回复列表和统计不在里面。</p>
+        <label class="check"><input type="checkbox" id="cfgKeys" /><span>包含 API Key<small>默认不带。带上的话文件里是明文，只放在自己电脑上。</small></span></label>
+        <div class="row cfg-mode">
+          <label class="check"><input type="radio" name="cfgMode" value="merge" checked /><span>合并<small>只补空着的项，样本去重追加</small></span></label>
+          <label class="check"><input type="radio" name="cfgMode" value="overwrite" /><span>覆盖<small>用文件里的替换</small></span></label>
+        </div>
+        <div class="btn-grid">
+          <button id="cfgExport" class="ghost" type="button">导出配置</button>
+          <button id="cfgImport" class="ghost" type="button">导入配置</button>
+        </div>
+        <input type="file" id="cfgFile" accept=".json,application/json" class="hidden" />
+      </div>
       <div class="card">
         <h3>数据</h3>
         <p class="hint" id="storageUsage"></p>
         <div class="btn-grid">
-          <button id="exportData" class="ghost">导出数据</button>
+          <button id="exportData" class="ghost">导出全部数据</button>
           <button id="cleanupNow" class="ghost">清理过期数据</button>
           <button id="clearQueue" class="ghost danger">清空待回复</button>
         </div>

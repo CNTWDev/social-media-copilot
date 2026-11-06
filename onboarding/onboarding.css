@@ -17,3 +17,7 @@ body.ob { min-height: 100vh; }
 .ob-tips { padding-left: 18px; line-height: 1.8; }
 .ob-tips li { margin: 4px 0; }
 #obTestMsg.ok { color: var(--ok); }
+
+.ob-import { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 10px 14px; }
+.ob-import span { color: var(--muted, #666); font-size: 13px; }
+.ob-import button { flex-shrink: 0; }

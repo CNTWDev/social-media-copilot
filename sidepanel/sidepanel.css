@@ -34,11 +34,11 @@ main { padding: 12px 14px 48px; }
 .tab { display: none; } .tab.active { display: block; }
 
 /* ---------- 控件：统一高度 ---------- */
-select, input:not([type=checkbox]), textarea {
+select, input:not([type=checkbox]):not([type=radio]), textarea {
   font: inherit; color: var(--text); background: var(--card);
   border: 1px solid var(--line); border-radius: var(--r); padding: 0 10px; width: 100%;
 }
-select, input:not([type=checkbox]) { height: var(--h); }
+select, input:not([type=checkbox]):not([type=radio]) { height: var(--h); }
 textarea { padding: 8px 10px; resize: vertical; line-height: 1.5; display: block; }
 select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
@@ -66,11 +66,11 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .hint:empty { display: none; }
 
 label { display: block; margin: 12px 0 0; font-size: 12px; font-weight: 500; color: var(--text); }
-label > input:not([type=checkbox]), label > textarea, label > select { margin-top: 6px; }
+label > input:not([type=checkbox]):not([type=radio]), label > textarea, label > select { margin-top: 6px; }
 label small, .check small { display: block; margin-top: 4px; font-size: 11px; font-weight: 400; color: var(--muted); line-height: 1.45; }
 
 label.check { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0 0; font-size: 13px; font-weight: 400; cursor: pointer; }
-label.check input[type=checkbox] { flex: none; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); }
+label.check input[type=checkbox], label.check input[type=radio] { flex: none; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); }
 label.check span { flex: 1; }
 label.switch span { font-weight: 600; }
 
@@ -401,3 +401,5 @@ body.app { grid-template-rows: auto auto 1fr; }
 body.app .top { grid-row: 1; }
 body.app .ob-banner { grid-row: 2; }
 body.app .tabs, body.app main { grid-row: 3; }
+.cfg-mode { gap: 24px; flex-wrap: wrap; margin: 4px 0 10px; }
+.cfg-mode label.check { margin: 0; }

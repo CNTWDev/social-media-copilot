@@ -16,6 +16,12 @@
       </ol>
     </header>
 
+    <div class="card ob-import">
+      <span>以前用过、手里有配置文件？直接导入，兴趣、观点、风格样本都会带过来。</span>
+      <button id="obImportCfg" class="ghost small" type="button">导入配置文件</button>
+      <input type="file" id="obCfgFile" accept=".json,application/json" class="hidden" />
+    </div>
+
     <section class="ob-step card" data-step="0">
       <h2>第 1 步：选一个模型，填上 API Key</h2>
       <p class="hint">打分、起草、翻译都用同一个模型商。Key 只存在你这台电脑的浏览器里，不会上传到别处。插件永远不会替你点发送。</p>
@@ -39,7 +45,7 @@
     <section class="ob-step card" data-step="2">
       <h2>第 3 步：你的画像</h2>
       <p class="hint">用几句话介绍你自己：做什么、关心哪些话题、有哪些观点。我帮你整理成兴趣、关键词和观点，用来找值得回的讨论，起草时也会站在你的立场。整理完你可以直接改。</p>
-      <textarea id="obIntro" rows="4" placeholder="比如：我在一家做端侧语音 AI 的公司做产品，关心个人助理、端侧芯片和隐私。我认为个人助理的胜负在于对用户的理解，而这依赖持续的端侧感知……"></textarea>
+      <textarea id="obIntro" rows="4" placeholder="比如：我在一家做 xx 的公司做产品，关心 A、B 和 C。我认为这个行业真正的门槛在于……"></textarea>
       <div class="row"><button id="obIntroGo">帮我整理</button><span id="obIntroMsg" class="hint"></span></div>
       <div id="obProfile">
         <label>关注的领域<textarea id="obInterests" rows="6"></textarea></label>
