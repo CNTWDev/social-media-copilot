@@ -19,8 +19,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   chrome.alarms.create('myposts', { delayInMinutes: 3, periodInMinutes: 30 });
   const pages = ['https://*.reddit.com/*', 'https://x.com/*', 'https://twitter.com/*', 'https://www.linkedin.com/*'];
   chrome.contextMenus?.removeAll(() => {
-    // 只保留一个菜单项：Chrome 只有在扩展只有一项时才把它直接放在右键一级菜单里（多项会被收进子菜单）
-    chrome.contextMenus.create({ id: 'rc-help-reply', title: '帮我回复 / 翻译', contexts: ['selection'] });
+    // 回复和翻译分成两项，各自只做自己的事，不会先跑一遍回复再切翻译（省 token）。
+    // 注意：Chrome 规定扩展有两项以上时会收进以扩展名命名的子菜单。
+    chrome.contextMenus.create({ id: 'rc-help-reply', title: '帮我回复', contexts: ['selection'] });
+    chrome.contextMenus.create({ id: 'rc-translate', title: '帮我翻译', contexts: ['selection'] });
   });
   await injectIntoOpenTabs();
   await purgeOwn();
@@ -941,13 +943,12 @@ async function addFromSelection(info, tab) {
   draft(id).catch(() => {});
 }
 chrome.contextMenus?.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'rc-help-reply') {
-    openQuick({ text: (info.selectionText || '').trim(), url: info.pageUrl || tab?.url || '', title: tab?.title || '' }).catch(() => {});
-  }
+  const mode = { 'rc-help-reply': 'reply', 'rc-translate': 'translate' }[info.menuItemId];
+  if (mode) openQuick({ text: (info.selectionText || '').trim(), url: info.pageUrl || tab?.url || '', title: tab?.title || '', mode }).catch(() => {});
 });
 // 全局快捷键：在桌面聊天软件里先复制，再按快捷键，弹出同一个小窗（小窗自己读剪贴板）
 chrome.commands?.onCommand.addListener((cmd) => {
-  if (cmd === 'quick-reply') openQuick({ text: '', fromClipboard: true }).catch(() => {});
+  if (cmd === 'quick-reply') openQuick({ text: '', fromClipboard: true, mode: 'reply' }).catch(() => {});
   if (cmd === 'quick-translate') openQuick({ text: '', fromClipboard: true, mode: 'translate' }).catch(() => {});
 });
 

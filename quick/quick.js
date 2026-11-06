@@ -61,7 +61,7 @@ async function load() {
   const { quickReq } = await chrome.storage.local.get('quickReq');
   req = quickReq || {};
   autoTr = null;
-  // 右键打开时沿用你上次用的功能（上次在翻译，这次打开就直接翻译）
+  // 从哪个入口打开就只做哪件事：「帮我翻译」只翻译，「帮我回复」只回复
   let last = '';
   try { last = localStorage.getItem('qMode') || ''; } catch {}
   setMode((req.mode || last) === 'translate' ? 'translate' : 'reply');
