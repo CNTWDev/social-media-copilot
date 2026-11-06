@@ -1,9 +1,12 @@
-# 推一个版本 tag（如 v0.16.1）时自动打包扩展，并发布到 GitHub Releases。
+# manifest.json 的版本号变了（推到 main）时自动打包扩展，发布到 GitHub Releases。
+# 这个版本已经发布过就跳过；也可以在 Actions 页面手动运行。
 name: Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['manifest.json', '.github/workflows/release.yml']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,26 +14,37 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check manifest version matches tag
+      - name: Read version
+        id: ver
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          VER=$(jq -r .version manifest.json)
-          if [ "$TAG" != "$VER" ]; then
-            echo "Tag v$TAG does not match manifest.json version $VER"; exit 1
+          TAG="v$(jq -r .version manifest.json)"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"; echo "$TAG already released, skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build zip
+        if: steps.ver.outputs.exists == 'false'
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
           mkdir -p dist/reply-copilot
           tar --exclude=./.git --exclude=./.github --exclude=./dist --exclude=./.gitignore -cf - . | tar -xf - -C dist/reply-copilot
-          cd dist && zip -qr "reply-copilot-${GITHUB_REF_NAME}.zip" reply-copilot
+          cd dist && zip -qr "reply-copilot-${TAG}.zip" reply-copilot
 
       - name: Release notes from README
+        if: steps.ver.outputs.exists == 'false'
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
-          awk -v v="## ${GITHUB_REF_NAME} 更新" 'index($0, v) == 1 { on = 1; next } on && /^## / { exit } on' README.md > notes.md
+          awk -v v="## ${TAG} 更新" 'index($0, v) == 1 { on = 1; next } on && /^## / { exit } on' README.md > notes.md
           cat >> notes.md <<'TXT'
 
           ### 安装
@@ -41,8 +55,9 @@ jobs:
           TXT
 
       - name: Publish release
+        if: steps.ver.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.ver.outputs.tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "dist/reply-copilot-${GITHUB_REF_NAME}.zip" \
-            --title "Reply Copilot ${GITHUB_REF_NAME}" --notes-file notes.md
+          gh release create "$TAG" "dist/reply-copilot-${TAG}.zip" -R "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --title "Reply Copilot ${TAG}" --notes-file notes.md

@@ -11,7 +11,7 @@
 
 也可以直接克隆仓库，用仓库根目录作为「已解压的扩展程序」加载。
 
-**发布新版本（维护者）**：改 `manifest.json` 的 version，在 README 加一节 `## vX.Y.Z 更新：…`，然后推 tag：`git tag vX.Y.Z && git push origin vX.Y.Z`。GitHub Actions 会自动打包 zip 并发布到 Releases，发布说明取自 README 里对应的那一节。
+**发布新版本（维护者）**：改 `manifest.json` 的 version，在 README 加一节 `## vX.Y.Z 更新：…`，推到 main。GitHub Actions 发现是新版本号，就会自动打包 zip、建 tag 并发布到 Releases，发布说明取自 README 里对应的那一节。
 
 ## 它做什么
 
