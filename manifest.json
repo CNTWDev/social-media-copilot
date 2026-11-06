@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reply Copilot",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "description": "发现 Reddit / X / LinkedIn / Hacker News 上你感兴趣的讨论，用你的风格起草回复，由你确认后发送。",
   "permissions": [
     "storage",

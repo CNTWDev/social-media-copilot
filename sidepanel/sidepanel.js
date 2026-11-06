@@ -1840,7 +1840,41 @@ form.addEventListener('submit', async (e) => {
 $('#exportData').addEventListener('click', async () => {
   const all = await chrome.storage.local.get(null);
   if (all.settings) all.settings = { ...all.settings, apiKey: '(已隐藏)', openaiKey: '(已隐藏)', deepseekKey: '(已隐藏)' };
-  downloadJson(all, 'reply-copilot-export.json');
+  all._app = 'reply-copilot-data';
+  all._exportedAt = new Date().toISOString();
+  downloadJson(all, 'reply-copilot-data-' + configFileName().slice(-13));
+});
+$('#importData').addEventListener('click', () => $('#dataFile').click());
+$('#dataFile').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try {
+    let data;
+    try { data = JSON.parse(await f.text()); } catch { throw new Error('不是有效的 JSON 文件。'); }
+    // 选的是配置文件：按配置合并导入
+    if (data?.app === 'reply-copilot') {
+      const changed = await importConfig(data, 'merge');
+      notice('这是配置文件，已按「合并」导入：' + (changed.join('；') || '没有变化'), 8000);
+    } else {
+      if (!data || typeof data.settings !== 'object' || !(data.posts || data.style || data.stats)) throw new Error('这不是 Reply Copilot 导出的全部数据文件。');
+      const n = Object.keys(data.posts || {}).length;
+      if (!confirm(`用这个备份恢复全部数据？现在的待回复列表、记录和配置会被替换（${n} 条内容）。你现在的 API Key 会保留。`)) return;
+      const cur = await getSettings();
+      delete data._app; delete data._exportedAt;
+      for (const k of ['apiKey', 'openaiKey', 'deepseekKey']) {
+        const v = data.settings[k];
+        if (!v || /已隐藏/.test(v)) data.settings[k] = cur[k] || '';
+      }
+      await chrome.storage.local.clear();
+      await chrome.storage.local.set(data);
+      await send({ type: 'SETTINGS_CHANGED' });
+      notice(`已恢复全部数据：${n} 条内容、${(data.style?.samples || []).length} 条风格样本。`, 8000);
+    }
+    renderSettings(); renderStyle(); renderCompany(); renderLearn(); scheduleRender();
+  } catch (err) {
+    notice('导入失败：' + (err.message || err), 8000);
+  }
 });
 // ---- 配置导出 / 导入 ----
 $('#cfgExport').addEventListener('click', async () => {

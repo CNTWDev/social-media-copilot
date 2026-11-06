@@ -355,11 +355,14 @@
       <div class="card">
         <h3>数据</h3>
         <p class="hint" id="storageUsage"></p>
+        <p class="hint">「全部数据」包括待回复列表、已发记录、统计、关联库和所有配置，用来整机备份和恢复（不含 API Key）。</p>
         <div class="btn-grid">
           <button id="exportData" class="ghost">导出全部数据</button>
+          <button id="importData" class="ghost">导入全部数据</button>
           <button id="cleanupNow" class="ghost">清理过期数据</button>
           <button id="clearQueue" class="ghost danger">清空待回复</button>
         </div>
+        <input type="file" id="dataFile" accept=".json,application/json" class="hidden" />
       </div>
     </section>
   </main>
